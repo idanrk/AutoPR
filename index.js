@@ -44,9 +44,23 @@ const main = async () => {
         description = chatGptResponse.data.choices[0].text;
     }
 
-    // Create PR
+    // Get remote URL
+    const remoteUrl = (await git.remote(['get-url', 'origin'])).trim();
+
+// Extract repo owner and repo name
+    const repoMatch = remoteUrl.match(/\/([^\/]+)\/([^\/]+)\.git$/);
+    if (!repoMatch) {
+        console.error('Could not extract repo owner and name from remote URL');
+        return;
+    }
+
+    const repoOwner = repoMatch[1];
+    const repoName = repoMatch[2];
+
+
+// Create PR
     const { data } = await axios.post(
-        `https://api.github.com/repos/{your-repo-owner}/{your-repo-name}/pulls`,  // Replace with your repository path
+        `https://api.github.com/repos/${repoOwner}/${repoName}/pulls`,
         {
             title: `PR from ${currentBranch}`,
             head: currentBranch,
