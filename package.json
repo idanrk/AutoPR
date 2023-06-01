@@ -1,0 +1,29 @@
+{
+  "name": "auto-pr",
+  "version": "1.0.0",
+  "description": "A CLI tool for automatically creating PR with description based on commits",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cli",
+    "github",
+    "pull-request",
+    "chatgpt"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "bin": {
+    "create-pr": "./index.js"
+  },
+  "dependencies": {
+    "axios": "^0.23.0",
+    "simple-git": "^3.2.0",
+    "openai": "^0.27.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
+
