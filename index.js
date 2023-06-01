@@ -10,7 +10,7 @@ const openai = new OpenAIApi({
 });
 
 const main = async () => {
-    const targetBranch = process.env.CREATE_PR_TARGET || 'main';
+    const targetBranch = process.env.CREATE_PR_TARGET || 'master';
     const githubToken = process.env.GITHUB_TOKEN;
 
     if (!githubToken) {
