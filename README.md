@@ -18,9 +18,7 @@ Before using this tool, you will need to set the following environment variables
 
 GITHUB_TOKEN: Your GitHub personal access token.
 CREATE_PR_TARGET: The target branch for your PR.
-Contributing
-Contributions are welcome! Please feel free to submit a pull request or open an issue if you have any questions or suggestions.
-
+```
 # License
 This project is licensed under the MIT License - see the LICENSE.md file for details.
 
