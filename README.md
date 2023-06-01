@@ -6,6 +6,10 @@ This is a command-line interface (CLI) tool that allows you to create a new pull
 
 To use this tool, simply call `create-pr` with no other arguments. This will create a new PR on GitHub with the target branch set to the one specified in the environment variable `CREATE_PR_TARGET` and the source branch set to the current working branch.
 
+The tool will automatically generate a description for your PR based on the commit messages in your branch. The description text will be generated using OpenAI's ChatGPT, which uses machine learning to generate natural language text.
+
+If you would like to customize the description text, you can do so by adding a `.pr-description` file to your branch. The contents of this file will be used as the description for your PR.
+
 ## Installation
 
 To install this tool, simply run:
@@ -18,7 +22,22 @@ Before using this tool, you will need to set the following environment variables
 
 GITHUB_TOKEN: Your GitHub personal access token.
 CREATE_PR_TARGET: The target branch for your PR.
+You can also configure the following options by setting environment variables:
+
+CHATGPT_API_KEY: Your OpenAI API key for ChatGPT.
+CHATGPT_MODEL: The name of the ChatGPT model to use (default: davinci).
+CHATGPT_TEMPERATURE: The temperature parameter for ChatGPT (default: 0.7).
+CHATGPT_MAX_LENGTH: The maximum length of the generated text (default: 1024).
 ```
+## Example
+
+Here's an example of how to use this tool:
+
+```sh
+$ create-pr
+```
+
+
 # License
 This project is licensed under the MIT License - see the LICENSE.md file for details.
 
