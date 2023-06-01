@@ -1,85 +1,95 @@
-#!/usr/bin/env node
 const axios = require('axios');
-const simpleGit = require('simple-git');
-const git = simpleGit();
-const { OpenAIApi } = require('openai');
+const git = require('simple-git');
+const OpenAI = require('openai');
 
-// Initialize OpenAI API with key
-const apiKey = process.env.CHATGPT_API_KEY;
-const openai = new OpenAIApi({
-    apiKey,
-});
+// Configuration
+const config = {
+    githubToken: process.env.GITHUB_TOKEN,
+    targetBranch: process.env.CREATE_PR_TARGET || 'master',
+    chatGptApiKey: process.env.CHATGPT_API_KEY,
+    chatGptModel: process.env.CHATGPT_MODEL || 'text-davinci-002',
+};
 
-const main = async () => {
-    const targetBranch = process.env.CREATE_PR_TARGET || 'master';
-    const githubToken = process.env.GITHUB_TOKEN;
-    if(!apiKey) {
+async function createPr(){
+    if(!config.chatGptApiKey) {
         console.error('CHATGPT_API_KEY environment variable is not set');
         return;
     }
-    if (!githubToken) {
+    if (!config.githubToken) {
         console.error('GITHUB_TOKEN environment variable is not set');
         return;
     }
-
-    // Get branch name
-    const branchSummary = await git.branch();
-    const currentBranch = branchSummary.current;
-
-    // Get commit messages
-    const log = await git.log();
-    const commitMessages = log.all
-        .filter(commit => commit.refs.includes(currentBranch))
-        .map(commit => commit.message)
-        .join('. ');
-
-    let description = '';
     try {
-        description = await fs.readFileSync('.pr-description', 'utf-8');
-    } catch (err) {
-        // .pr-description file not found. Generate description using OpenAI ChatGPT
-        const chatGptResponse = await openai.complete({
-            model: process.env.CHATGPT_MODEL || 'text-davinci-002',
-            prompt: commitMessages,
-            temperature: process.env.CHATGPT_TEMPERATURE || 0.7,
-            max_tokens: process.env.CHATGPT_MAX_LENGTH || 1024,
-        });
+        // Get the current branch name
+        const branchName = await getCurrentBranchName();
 
-        description = chatGptResponse.data.choices[0].text;
-    }
+        // Get commit messages
+        const commits = await getCommits();
 
-    // Get remote URL
-    const remoteUrl = (await git.remote(['get-url', 'origin'])).trim();
+        // Generate PR description
+        const prDescription = await generatePrDescription(commits);
 
-// Extract repo owner and repo name
-    const repoMatch = remoteUrl.match(/\/([^\/]+)\/([^\/]+)\.git$/);
-    if (!repoMatch) {
-        console.error('Could not extract repo owner and name from remote URL');
-        return;
-    }
+        // Get repository details
+        const { repoOwner, repoName } = await getRepoDetails();
 
-    const repoOwner = repoMatch[1];
-    const repoName = repoMatch[2];
-
-
-// Create PR
-    const { data } = await axios.post(
-        `https://api.github.com/repos/${repoOwner}/${repoName}/pulls`,
-        {
-            title: `PR from ${currentBranch}`,
-            head: currentBranch,
-            base: targetBranch,
-            body: description,
-        },
-        {
-            headers: {
-                'Authorization': `token ${githubToken}`,
-                'Accept': 'application/vnd.github.v3+json',
+        // Create the PR
+        await axios.post(
+            `https://api.github.com/repos/${repoOwner}/${repoName}/pulls`,
+            {
+                title: `PR from ${branchName}`,
+                head: branchName,
+                base: config.targetBranch,
+                body: prDescription,
             },
-        },
-    );
+            {
+                headers: {
+                    'Authorization': `token ${config.githubToken}`,
+                },
+            }
+        );
 
-    console.log('PR created:', data.html_url);
-};
+        console.log('PR created successfully');
+    } catch (err) {
+        console.error('Failed to create PR', err);
+    }
+}
 
-main().catch(console.error);
+async function getCurrentBranchName() {
+    const gitStatus = await git().status();
+    return gitStatus.current;
+}
+
+async function getCommits() {
+    const log = await git().log();
+    return log.all.map(commit => commit.message).join('\n');
+}
+
+async function generatePrDescription(commits) {
+    const openai = new OpenAI(config.chatGptApiKey);
+    const result = await openai.ChatCompletion.create({
+        model: config.chatGptModel,
+        messages: [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant."
+            },
+            {
+                "role": "user",
+                "content": `Generate a PR description from these commits: ${commits}`
+            }
+        ]
+    });
+    return result.data.choices[0].message.content;
+}
+
+async function getRepoDetails() {
+    const remote = await git().getRemotes(true);
+    const url = remote[0].refs.fetch;
+    const match = /github\.com[\/:]([^/]+)\/([^/]+)\.git/.exec(url);
+    return {
+        repoOwner: match[1],
+        repoName: match[2]
+    };
+}
+
+createPr();
