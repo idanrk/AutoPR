@@ -5,14 +5,18 @@ const git = simpleGit();
 const { OpenAIApi } = require('openai');
 
 // Initialize OpenAI API with key
+const apiKey = process.env.CHATGPT_API_KEY;
 const openai = new OpenAIApi({
-    apiKey: process.env.CHATGPT_API_KEY || '',
+    apiKey,
 });
 
 const main = async () => {
     const targetBranch = process.env.CREATE_PR_TARGET || 'master';
     const githubToken = process.env.GITHUB_TOKEN;
-
+    if(!apiKey) {
+        console.error('CHATGPT_API_KEY environment variable is not set');
+        return;
+    }
     if (!githubToken) {
         console.error('GITHUB_TOKEN environment variable is not set');
         return;
